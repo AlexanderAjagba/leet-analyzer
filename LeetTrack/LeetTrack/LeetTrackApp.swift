@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 @main
 struct LeetTrackApp: App {
     var body: some Scene {

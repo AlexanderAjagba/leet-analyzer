@@ -5,6 +5,9 @@
 //  Created by Alexander Ajagba on 7/7/25.
 //
 import SwiftUI
+import Charts
+
+
 class AppPopover : NSObject, NSPopoverDelegate {
     private var popover: NSPopover!
     // initalizer popover as content view and state as parameters
@@ -20,3 +23,4 @@ class AppPopover : NSObject, NSPopoverDelegate {
     // toggle popover into view
 //    func toggleButton(relativeTo button: NSStatusBarButton,
 }
+
