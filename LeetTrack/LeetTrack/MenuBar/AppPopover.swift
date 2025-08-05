@@ -1,6 +1,6 @@
 //
 //  AppPopover.swift
-//  
+//
 //
 //  Created by Alexander Ajagba on 7/7/25.
 //
@@ -10,7 +10,7 @@ import Charts
 
 class AppPopover : NSObject, NSPopoverDelegate {
     private var popover: NSPopover!
-    // initalizer popover as content view and state as parameters
+
     init <Content : View>(contentView: Content) {
         super.init()
         self.popover = NSPopover()
@@ -20,7 +20,20 @@ class AppPopover : NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: contentView)
     }
+    
     // toggle popover into view
 //    func toggleButton(relativeTo button: NSStatusBarButton,
+    func toggle(relativeTo button: NSStatusBarButton, sender: AnyObject?) {
+            if popover.isShown {
+                popover.performClose(sender)
+            } else {
+                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                popover.contentViewController?.view.window?.makeKey()
+            }
+        }
+        
+    func close() {
+        popover.performClose(self)
+    }
 }
 
