@@ -7,31 +7,37 @@
       "size" : "16x16"
     },
     {
+      "filename" : "leetcode-image32x32.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
+      "filename" : "leetcode-image32x32 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
     },
     {
+      "filename" : "leetcode-image64x64.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
     },
     {
+      "filename" : "leetcode-image128x128.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
     },
     {
+      "filename" : "leetcode-image256x256.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
+      "filename" : "leetcode-image256x256 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
@@ -43,11 +49,13 @@
       "size" : "256x256"
     },
     {
+      "filename" : "leetcode-image 2.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
+      "filename" : "leetcode-image1024x1024 2.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
