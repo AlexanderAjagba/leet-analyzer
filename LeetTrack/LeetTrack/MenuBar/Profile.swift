@@ -6,5 +6,11 @@
 //
 
 import Foundation
-
+class Profile: Progress {
+    var username: String
+    init(username: String) {
+        self.username = username
+    }
+    
+}
 

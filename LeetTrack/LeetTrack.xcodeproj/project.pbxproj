@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		579F81582E43F07200BC891B /* MongoDBService in Sources */ = {isa = PBXBuildFile; fileRef = 579F81572E43F03B00BC891B /* MongoDBService */; };
+		579F815B2E43F35D00BC891B /* MongoDBService in Frameworks */ = {isa = PBXBuildFile; productRef = 579F815A2E43F35D00BC891B /* MongoDBService */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		577AC2E82DC9523700026338 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +32,7 @@
 		577AC2D92DC9523200026338 /* LeetTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeetTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		577AC2E72DC9523700026338 /* LeetTrackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeetTrackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		577AC2F12DC9523700026338 /* LeetTrackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeetTrackUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		579F81572E43F03B00BC891B /* MongoDBService */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MongoDBService; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				579F815B2E43F35D00BC891B /* MongoDBService in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +86,7 @@
 				577AC2EA2DC9523700026338 /* LeetTrackTests */,
 				577AC2F42DC9523700026338 /* LeetTrackUITests */,
 				577AC2DA2DC9523200026338 /* Products */,
+				579F81572E43F03B00BC891B /* MongoDBService */,
 			);
 			sourceTree = "<group>";
 		};
@@ -112,6 +120,7 @@
 			);
 			name = LeetTrack;
 			packageProductDependencies = (
+				579F815A2E43F35D00BC891B /* MongoDBService */,
 			);
 			productName = LeetTrack;
 			productReference = 577AC2D92DC9523200026338 /* LeetTrack.app */;
@@ -195,6 +204,9 @@
 			);
 			mainGroup = 577AC2D02DC9523200026338;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				579F81592E43F35D00BC891B /* XCLocalSwiftPackageReference "MongoDBService" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 577AC2DA2DC9523200026338 /* Products */;
 			projectDirPath = "";
@@ -236,6 +248,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				579F81582E43F07200BC891B /* MongoDBService in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -541,6 +554,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		579F81592E43F35D00BC891B /* XCLocalSwiftPackageReference "MongoDBService" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = MongoDBService;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		579F815A2E43F35D00BC891B /* MongoDBService */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MongoDBService;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 577AC2D12DC9523200026338 /* Project object */;
 }

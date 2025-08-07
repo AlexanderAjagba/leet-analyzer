@@ -1,26 +1,37 @@
 import Foundation
-import MongoSwift
-import NIO
+import MongoDBService
+import Combine
 
-struct DatabaseConfig {
-    static var mongoCom nnectionString: String {
-        guard let connectionString = ProcessInfo.processInfo.environment["MONGO_CONNECTION_STRING"] else {
-            fatalError("MONGO_CONNECTION_STRING environment variable not set")
-        }
-        return connectionString
+/// View-model that owns your MongoDBService and publishes the list of DB names
+final class DatabaseViewModel: ObservableObject {
+  @Published var databaseNames: [String] = []
+  @Published var errorMessage: String? = nil
+
+  private let service: MongoDBService
+
+  init() {
+    do {
+      self.service = try MongoDBService()
+      fetchDatabases()
+    } catch {
+      self.errorMessage = "Failed to init MongoDBService: \(error)"
+      self.service = try! MongoDBService() // to satisfy non-optional, won't actually run
     }
+  }
+
+  private func fetchDatabases() {
+    Task {
+      do {
+        let names = try await service.listDatabases()
+        // switch back to main thread to update @Published
+        await MainActor.run {
+          self.databaseNames = names
+        }
+      } catch {
+        await MainActor.run {
+          self.errorMessage = "Error listing DBs: \(error)"
+        }
+      }
+    }
+  }
 }
-
-let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
-let client = try MongoClient(
-    DatabaseConfig.mongoConnectionString,
-    using: elg
-)
-
-defer {
-    try? client.syncClose()
-    cleanupMongoSwift()
-    try? elg.syncShutdownGracefully()
-}
-
-print(try client.listDatabaseNames().wait())

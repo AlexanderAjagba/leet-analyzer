@@ -1,9 +1,3 @@
-//
-//  AppPopover.swift
-//
-//
-//  Created by Alexander Ajagba on 7/7/25.
-//
 import SwiftUI
 import Charts
 
@@ -36,4 +30,5 @@ class AppPopover : NSObject, NSPopoverDelegate {
         popover.performClose(self)
     }
 }
+
 

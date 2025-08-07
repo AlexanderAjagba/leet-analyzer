@@ -1,18 +1,15 @@
-//
-//  LeetTrackApp.swift
-//  LeetTrack
-//
-//  Created by Alexander Ajagba on 5/5/25.
-//
-
 import SwiftUI
-
-
 @main
 struct LeetTrackApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+  // keep one instance of your view-model
+//  @StateObject private var dbViewModel = DatabaseViewModel()
+
+  var body: some Scene {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    WindowGroup {
+      ContentView()
+//        .environmentObject(dbViewModel)
     }
+  }
 }
+
