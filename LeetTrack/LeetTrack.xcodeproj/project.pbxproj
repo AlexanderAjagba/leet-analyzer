@@ -36,9 +36,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		577AC2DB2DC9523200026338 /* LeetTrack */ = {
+		577AC2DB2DC9523200026338 /* src */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LeetTrack;
+			path = src;
 			sourceTree = "<group>";
 		};
 		577AC2EA2DC9523700026338 /* LeetTrackTests */ = {
@@ -82,7 +82,7 @@
 		577AC2D02DC9523200026338 = {
 			isa = PBXGroup;
 			children = (
-				577AC2DB2DC9523200026338 /* LeetTrack */,
+				577AC2DB2DC9523200026338 /* src */,
 				577AC2EA2DC9523700026338 /* LeetTrackTests */,
 				577AC2F42DC9523700026338 /* LeetTrackUITests */,
 				577AC2DA2DC9523200026338 /* Products */,
@@ -116,7 +116,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				577AC2DB2DC9523200026338 /* LeetTrack */,
+				577AC2DB2DC9523200026338 /* src */,
 			);
 			name = LeetTrack;
 			packageProductDependencies = (
@@ -405,7 +405,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = LeetTrack/LeetTrack.entitlements;
+				CODE_SIGN_ENTITLEMENTS = src/LeetTrack.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -430,7 +430,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = LeetTrack/LeetTrack.entitlements;
+				CODE_SIGN_ENTITLEMENTS = src/LeetTrack.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;

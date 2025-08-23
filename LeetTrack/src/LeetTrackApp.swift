@@ -7,7 +7,7 @@ struct LeetTrackApp: App {
   var body: some Scene {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     WindowGroup {
-      ContentView()
+      HomeView()
 //        .environmentObject(dbViewModel)
     }
   }
