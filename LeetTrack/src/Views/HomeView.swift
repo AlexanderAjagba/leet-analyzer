@@ -14,7 +14,11 @@ struct ProblemStats: Identifiable {
     let count: Int
     let id = UUID()
 }
-
+enum SelectedView {
+    case home
+    case dailyQuestion
+    case lastSolved
+}
 // 2. Create some sample data
 let problemData: [ProblemStats] = [
     .init(category: "Easy", count: 85),
@@ -28,13 +32,77 @@ struct HomeView: View {
     private var totalProblems: Int {
         problemData.reduce(0) { $0 + $1.count }
     }
-
+    
+    @State private var selectedView: SelectedView = .home
+    @State private var buttonClick: Bool = false
+    func selectionTab() -> some View {
+        VStack {
+            switch selectedView {
+            case .home:
+                HomeView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading),
+                        removal: .move(edge: .trailing)
+                    ))
+            case .dailyQuestion:
+                DailyQuestion()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom),
+                        removal: .move(edge: .top)
+                    ))
+            case .lastSolved:
+                Stats()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing),
+                        removal: .move(edge: .leading)
+                    ))
+            }
+        }
+    }
     var body: some View {
+        // State to track which view is currently selected
         VStack(spacing: 20) {
+            // Tab buttons to switch views
+            HStack(spacing: 20) {
+                Button("Home") {
+                    withAnimation(.spring()) {
+                        selectedView = .home
+                        buttonClick = true
+                    }
+                }
+                .foregroundColor(selectedView == .home ? .blue : .primary)
+                .fontWeight(selectedView == .home ? .bold : .regular)
+                
+                Button("Daily Question") {
+                    withAnimation(.spring()) {
+                        selectedView = .dailyQuestion
+                        buttonClick = true
+                    }
+                }
+                .foregroundColor(selectedView == .dailyQuestion ? .blue : .primary)
+                .fontWeight(selectedView == .dailyQuestion ? .bold : .regular)
+                
+                Button("Last Solved") {
+                    withAnimation(.spring()) {
+                        selectedView = .lastSolved
+                        buttonClick = true
+                    }
+                }
+                .foregroundColor(selectedView == .lastSolved ? .blue : .primary)
+                .fontWeight(selectedView == .lastSolved ? .bold : .regular)
+            }
+            .padding()
+            
+            // Conditional view display with animations
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: selectedView)
+            if buttonClick {
+                selectionTab()
+            }
+            
             Text("Problems Solved")
                 .font(.title2)
                 .fontWeight(.semibold)
-
+            
             // 3. Create the Chart View
             Chart(problemData) { dataPoint in
                 // Use a SectorMark for pie/donut charts
@@ -65,7 +133,7 @@ struct HomeView: View {
             // Adds a legend below the chart
             .chartLegend(position: .bottom, alignment: .center)
             .frame(height: 300)
-
+            
             Spacer() // Pushes the chart to the top
         }
         .padding()
