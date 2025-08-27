@@ -14,11 +14,26 @@ struct ProblemStats: Identifiable {
     let count: Int
     let id = UUID()
 }
-enum SelectedView {
-    case home
-    case dailyQuestion
-    case lastSolved
+
+enum SelectedView: String, CaseIterable, Identifiable {
+    case home = "Home"
+    case dailyQuestion = "Daily Question"
+    case lastSolved = "Last Solved"
+    
+    var id: String { self.rawValue }
+    
+    var systemImage: String {
+        switch self {
+        case .home:
+            return "house"
+        case .dailyQuestion:
+            return "questionmark.circle"
+        case .lastSolved:
+            return "chart.bar"
+        }
+    }
 }
+
 // 2. Create some sample data
 let problemData: [ProblemStats] = [
     .init(category: "Easy", count: 85),
@@ -26,6 +41,8 @@ let problemData: [ProblemStats] = [
     .init(category: "Hard", count: 45)
 ]
 
+// views are merged together and theres a need for navigationPath or stack
+// check this stackoverflow: https://stackoverflow.com/questions/77928289/remove-the-current-view-and-then-navigate-to-another-view-in-swiftui
 
 struct HomeView: View {
     // Calculate the total number of problems solved
@@ -33,72 +50,46 @@ struct HomeView: View {
         problemData.reduce(0) { $0 + $1.count }
     }
     
-    @State private var selectedView: SelectedView = .home
-    @State private var buttonClick: Bool = false
-    func selectionTab() -> some View {
-        VStack {
-            switch selectedView {
-            case .home:
-                HomeView()
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .leading),
-                        removal: .move(edge: .trailing)
-                    ))
-            case .dailyQuestion:
-                DailyQuestion()
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .bottom),
-                        removal: .move(edge: .top)
-                    ))
-            case .lastSolved:
-                Stats()
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing),
-                        removal: .move(edge: .leading)
-                    ))
+    @State private var selectedView: SelectedView? = .home
+    
+    var body: some View {
+        NavigationSplitView {
+            // Sidebar
+            List(SelectedView.allCases, selection: $selectedView) { view in
+                NavigationLink(value: view) {
+                    Label(view.rawValue, systemImage: view.systemImage)
+                }
+            }
+            .navigationTitle("LeetTrack")
+            .frame(minWidth: 200)
+        } detail: {
+            // Detail content
+            if let selectedView = selectedView {
+                switch selectedView {
+                case .home:
+                    homeContent
+                        .navigationTitle("Home")
+                case .dailyQuestion:
+                    DailyQuestion()
+                        .navigationTitle("Daily Question")
+                case .lastSolved:
+                    Stats()
+                        .navigationTitle("Statistics")
+                }
+            } else {
+                ContentUnavailableView(
+                    "Select a View",
+                    systemImage: "sidebar.left",
+                    description: Text("Choose an option from the sidebar")
+                )
             }
         }
+        .navigationSplitViewStyle(.balanced)
     }
-    var body: some View {
-        // State to track which view is currently selected
+    
+    // Your original home content as a computed property
+    private var homeContent: some View {
         VStack(spacing: 20) {
-            // Tab buttons to switch views
-            HStack(spacing: 20) {
-                Button("Home") {
-                    withAnimation(.spring()) {
-                        selectedView = .home
-                        buttonClick = true
-                    }
-                }
-                .foregroundColor(selectedView == .home ? .blue : .primary)
-                .fontWeight(selectedView == .home ? .bold : .regular)
-                
-                Button("Daily Question") {
-                    withAnimation(.spring()) {
-                        selectedView = .dailyQuestion
-                        buttonClick = true
-                    }
-                }
-                .foregroundColor(selectedView == .dailyQuestion ? .blue : .primary)
-                .fontWeight(selectedView == .dailyQuestion ? .bold : .regular)
-                
-                Button("Last Solved") {
-                    withAnimation(.spring()) {
-                        selectedView = .lastSolved
-                        buttonClick = true
-                    }
-                }
-                .foregroundColor(selectedView == .lastSolved ? .blue : .primary)
-                .fontWeight(selectedView == .lastSolved ? .bold : .regular)
-            }
-            .padding()
-            
-            // Conditional view display with animations
-            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: selectedView)
-            if buttonClick {
-                selectionTab()
-            }
-            
             Text("Problems Solved")
                 .font(.title2)
                 .fontWeight(.semibold)
