@@ -31,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // initialize your popover
-        appPopover = AppPopover(contentView: HomeView())
+        appPopover = AppPopover(contentView: PopoverHomeView())
     }   // ← Make sure this brace closes applicationDidFinishLaunching
     @objc private func statusBarClicked(_ sender: Any?) {
         guard let event = NSApp.currentEvent else {return}
