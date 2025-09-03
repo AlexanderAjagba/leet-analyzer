@@ -51,16 +51,77 @@ struct HomeView: View {
     }
     
     @State private var selectedView: SelectedView? = .home
+    @State private var profileName: String = "User" // Default profile
+    @State private var isEditingProfile: Bool = false
+    @State private var tempProfileName: String = "User"
     
     var body: some View {
         NavigationSplitView {
             // Sidebar
-            List(SelectedView.allCases, selection: $selectedView) { view in
-                NavigationLink(value: view) {
-                    Label(view.rawValue, systemImage: view.systemImage)
+            VStack(spacing: 0) {
+                VStack {
+                    Text("Sections")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
                 }
+                
+                List(SelectedView.allCases, selection: $selectedView) { view in
+                    Label(view.rawValue, systemImage: view.systemImage)
+                        .tag(view)
+                }
+                .navigationTitle("LeetTrack")
+                
+                // Profile header
+                HStack {
+                    Button(action: {
+                        tempProfileName = profileName
+                        isEditingProfile = true
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.circle.fill")
+                                .foregroundColor(.blue)
+                                .font(.system(size: 18))
+                            
+                            Text(profileName)
+                                .font(.headline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Image(systemName: "pencil")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    
+                    Spacer()
+                }
+                .alert("Edit Profile Name", isPresented: $isEditingProfile,actions: {
+                    TextField("Profile Name", text: $tempProfileName)
+                    // .textFieldStyle(.roundedBorder)
+                    
+                    Button("Cancel", role: .cancel) {
+                        tempProfileName = ""
+                    }
+                    
+                    Button("Save") {
+                        if !tempProfileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            profileName = tempProfileName
+                            // Handle the text entry here - you can add your logic
+                                //  handleProfileNameChange(newName: profileName)
+                        }
+                        tempProfileName = ""
+                    }
+                }, message: {
+                    Text("Enter your profile name")
+                })
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(NSColor.controlBackgroundColor))
             }
-            .navigationTitle("LeetTrack")
             .frame(minWidth: 200)
         } detail: {
             // Detail content
@@ -98,20 +159,15 @@ struct HomeView: View {
             Chart(problemData) { dataPoint in
                 // Use a SectorMark for pie/donut charts
                 SectorMark(
-                    // The 'angle' determines the size of the slice
                     angle: .value("Count", dataPoint.count),
-                    // This is the key to making it a donut chart!
                     innerRadius: .ratio(0.6),
-                    // Adds a small gap between slices
                     angularInset: 1.5
                 )
-                // Style the slice with a rounded corner
                 .cornerRadius(5)
-                // Color each slice based on its category
                 .foregroundStyle(by: .value("Category", dataPoint.category))
             }
-            // Add text in the center of the donut chart
-            .chartOverlay { proxy in
+            // Center text inside the donut
+            .overlay {
                 VStack {
                     Text("\(totalProblems)")
                         .font(.largeTitle)

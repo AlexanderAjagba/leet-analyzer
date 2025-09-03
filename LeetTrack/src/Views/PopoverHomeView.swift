@@ -144,9 +144,9 @@ struct PopoverHomeView: View {
             }
         }
         .frame(width: 400, height: 400)
-        .alert("Edit Profile Name", isPresented: $isEditingProfile) {
+        .alert("Edit Profile Name", isPresented: $isEditingProfile,actions: {
             TextField("Profile Name", text: $tempProfileName)
-                .textFieldStyle(.roundedBorder)
+            // .textFieldStyle(.roundedBorder)
             
             Button("Cancel", role: .cancel) {
                 tempProfileName = ""
@@ -160,18 +160,18 @@ struct PopoverHomeView: View {
                 }
                 tempProfileName = ""
             }
-        } message: {
+        }, message: {
             Text("Enter your profile name")
-        }
+        })
     }
-    
+}
     // Function where you can handle the profile name change
     private func handleProfileNameChange(newName: String) {
         // Add your logic here for when the profile name is changed
         print("Profile name changed to: \(newName)")
         // You can save to UserDefaults, Core Data, or whatever storage you prefer
     }
-}
+
 
 #Preview {
     PopoverHomeView()
