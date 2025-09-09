@@ -51,16 +51,18 @@ struct PopoverHomeView: View {
     }
     
     @State private var selectedTab: TabSelection = .home
-    @State private var profileName: String = "User" // Default profile name
+    @ObservedObject var profileManager = ProfileManager.shared
     @State private var isEditingProfile: Bool = false
     @State private var tempProfileName: String = ""
+    // Add this property to observe changes to the username
+    @ObservedObject private var currentProfile: Profile = ProfileManager.shared.currentProfile
     
     var body: some View {
         VStack(spacing: 0) {
             // Profile header
             HStack {
                 Button(action: {
-                    tempProfileName = profileName
+                    tempProfileName = currentProfile.username
                     isEditingProfile = true
                 }) {
                     HStack(spacing: 6) {
@@ -68,7 +70,7 @@ struct PopoverHomeView: View {
                             .foregroundColor(.blue)
                             .font(.system(size: 18))
                         
-                        Text(profileName)
+                        Text(currentProfile.username)
                             .font(.headline)
                             .fontWeight(.medium)
                             .foregroundColor(.primary)
@@ -146,31 +148,27 @@ struct PopoverHomeView: View {
         .frame(width: 400, height: 400)
         .alert("Edit Profile Name", isPresented: $isEditingProfile,actions: {
             TextField("Profile Name", text: $tempProfileName)
-            // .textFieldStyle(.roundedBorder)
-            
             Button("Cancel", role: .cancel) {
-                tempProfileName = ""
+                tempProfileName = currentProfile.username
             }
-            
             Button("Save") {
-                if !tempProfileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    profileName = tempProfileName
-                    // Handle the text entry here - you can add your logic
-                    handleProfileNameChange(newName: profileName)
+                let trimmed = tempProfileName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    currentProfile.username = trimmed
                 }
-                tempProfileName = ""
+                tempProfileName = currentProfile.username
             }
         }, message: {
             Text("Enter your profile name")
         })
     }
 }
-    // Function where you can handle the profile name change
-    private func handleProfileNameChange(newName: String) {
-        // Add your logic here for when the profile name is changed
-        print("Profile name changed to: \(newName)")
-        // You can save to UserDefaults, Core Data, or whatever storage you prefer
-    }
+// Function where you can handle the profile name change
+private func handleProfileNameChange(newName: String) {
+    // Add your logic here for when the profile name is changed
+    print("Profile name changed to: \(newName)")
+    // You can save to UserDefaults, Core Data, or whatever storage you prefer
+}
 
 
 #Preview {

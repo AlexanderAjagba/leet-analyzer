@@ -8,9 +8,14 @@
 import Foundation
 import MongoSwift
 
-public struct Profile: Codable {
+class ProfileManager : ObservableObject {
+    @Published var currentProfile = Profile(username: "")
+    static var shared = ProfileManager()
+}
+
+public class Profile: Codable, ObservableObject {
     var _id: BSONObjectID?
-    var username: String
+    @Published var username: String
     var ranking: Int?
     var easyQuestions: Int?
     var mediumQuestions: Int?
@@ -26,6 +31,7 @@ public struct Profile: Codable {
         let mediumSolved: Int?
         let hardSolved: Int?
         let ranking: Int?
+       
     }
     
     init(username: String) {
@@ -33,8 +39,8 @@ public struct Profile: Codable {
         self.lastUpdated = Date()
     }
     
-    mutating func fetchData() async throws {
-        guard let url = URL(string: "https://alfa-leetcode-api.onrender.com/\(username)") else {
+    func fetchData() async throws {
+        guard let url = URL(string: "https://alfa-leetcode-api.onrender.com/\(ProfileManager.shared.currentProfile)") else {
             throw URLError(.badURL)
         }
         
@@ -90,5 +96,31 @@ public struct Profile: Codable {
         let hard = hardQuestions ?? 0
         
         return "Total: \(total) | Easy: \(easy) | Medium: \(medium) | Hard: \(hard)"
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case _id, username, ranking, easyQuestions, mediumQuestions, hardQuestions, totalQuestions, lastUpdated
+    }
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self._id = try container.decodeIfPresent(BSONObjectID.self, forKey: ._id)
+        self.username = try container.decode(String.self, forKey: .username)
+        self.ranking = try container.decodeIfPresent(Int.self, forKey: .ranking)
+        self.easyQuestions = try container.decodeIfPresent(Int.self, forKey: .easyQuestions)
+        self.mediumQuestions = try container.decodeIfPresent(Int.self, forKey: .mediumQuestions)
+        self.hardQuestions = try container.decodeIfPresent(Int.self, forKey: .hardQuestions)
+        self.totalQuestions = try container.decodeIfPresent(Int.self, forKey: .totalQuestions)
+        self.lastUpdated = try container.decodeIfPresent(Date.self, forKey: .lastUpdated)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(_id, forKey: ._id)
+        try container.encode(username, forKey: .username)
+        try container.encodeIfPresent(ranking, forKey: .ranking)
+        try container.encodeIfPresent(easyQuestions, forKey: .easyQuestions)
+        try container.encodeIfPresent(mediumQuestions, forKey: .mediumQuestions)
+        try container.encodeIfPresent(hardQuestions, forKey: .hardQuestions)
+        try container.encodeIfPresent(totalQuestions, forKey: .totalQuestions)
+        try container.encodeIfPresent(lastUpdated, forKey: .lastUpdated)
     }
 }
