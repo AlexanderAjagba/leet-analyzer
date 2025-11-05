@@ -12,6 +12,7 @@ import MongoSwift
 public class ProfileRepository {
     private let mongoService: MongoDBService
     private let collection: MongoCollection<BSONDocument>
+    private let leetRepository: LeetCodeRepository = LeetCodeRepository()
     
     init(mongoService: MongoDBService) {
         self.mongoService = mongoService
@@ -63,23 +64,22 @@ public class ProfileRepository {
         _ = try await collection.deleteOne(filter)
     }
     
-    // Get profile with automatic refresh if data is stale
+    // Get profile with automatic refresh if data is stale (fetch stats via API, persist in Mongo)
     func getProfileWithRefresh(username: String) async throws -> Profile {
-        // First, try to get from MongoDB
-        let profile = try await getProfile(username: username)
-        
-        // If profile doesn't exist or needs refresh, fetch from API
-        if profile == nil || profile!.needsRefresh {
-            var newProfile = Profile(username: username)
-            try await newProfile.fetchData()
-            
-            // Save the fresh data to MongoDB
-            try await saveProfile(newProfile)
-            
-            return newProfile
+        let existing = try await getProfile(username: username)
+        let needsNew = existing == nil || existing!.needsRefresh
+        var profile = existing ?? Profile(username: username)
+        if needsNew {
+            let stats = try await leetRepository.getStats(username: username)
+            profile.ranking = stats.ranking
+            profile.easyQuestions = stats.easySolved
+            profile.mediumQuestions = stats.mediumSolved
+            profile.hardQuestions = stats.hardSolved
+            profile.totalQuestions = stats.totalSolved
+            profile.lastUpdated = Date()
+            try await saveProfile(profile)
         }
-        
-        return profile!
+        return profile
     }
     
     // Get recent activity (profiles updated in last 24 hours)

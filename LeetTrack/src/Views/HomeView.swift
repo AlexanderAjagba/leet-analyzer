@@ -34,22 +34,8 @@ enum SelectedView: String, CaseIterable, Identifiable {
     }
 }
 
-// 2. Create some sample data
-let problemData: [ProblemStats] = [
-    .init(category: "Easy", count: 85),
-    .init(category: "Medium", count: 150),
-    .init(category: "Hard", count: 45)
-]
-
-// views are merged together and theres a need for navigationPath or stack
-// check this stackoverflow: https://stackoverflow.com/questions/77928289/remove-the-current-view-and-then-navigate-to-another-view-in-swiftui
-
 struct HomeView: View {
-    // Calculate the total number of problems solved
-    private var totalProblems: Int {
-        problemData.reduce(0) { $0 + $1.count }
-    }
-    
+    @StateObject var viewModel = HomeViewModel()
     @State private var selectedView: SelectedView? = .home
     @ObservedObject var profileManager = ProfileManager.shared
     @ObservedObject private var currentProfile: Profile = ProfileManager.shared.currentProfile
@@ -108,12 +94,14 @@ struct HomeView: View {
                     Button("Save") {
                         let trimmed = tempProfileName.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !trimmed.isEmpty {
-                            currentProfile.username = trimmed
+                            Task {
+                                await ProfileManager.shared.updateUsername(trimmed)
+                            }
                         }
                         tempProfileName = currentProfile.username
                     }
                 }, message: {
-                    Text("Enter your profile name")
+                    Text("Enter your LeetCode username")
                 })
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -143,9 +131,15 @@ struct HomeView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .task {
+            // Load profile from MongoDB first
+            await ProfileManager.shared.loadProfile(userId: "default_user")
+            // Then load LeetCode stats
+            await viewModel.load(username: currentProfile.username, userId: currentProfile.username)
+        }
     }
     
-    // Your original home content as a computed property
+    // Update homeContent to use viewModel.homeModel
     private var homeContent: some View {
         VStack(spacing: 20) {
             Text("Problems Solved")
@@ -153,7 +147,11 @@ struct HomeView: View {
                 .fontWeight(.semibold)
             
             // 3. Create the Chart View
-            Chart(problemData) { dataPoint in
+            Chart([
+                ProblemStats(category: "Easy", count: viewModel.homeModel.easySolved),
+                ProblemStats(category: "Medium", count: viewModel.homeModel.mediumSolved),
+                ProblemStats(category: "Hard", count: viewModel.homeModel.hardSolved)
+            ]) { dataPoint in
                 // Use a SectorMark for pie/donut charts
                 SectorMark(
                     angle: .value("Count", dataPoint.count),
@@ -166,7 +164,7 @@ struct HomeView: View {
             // Center text inside the donut
             .overlay {
                 VStack {
-                    Text("\(totalProblems)")
+                    Text("\(viewModel.homeModel.totalSolved)")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     Text("Total")
@@ -178,7 +176,45 @@ struct HomeView: View {
             .chartLegend(position: .bottom, alignment: .center)
             .frame(height: 300)
             
-            Spacer() // Pushes the chart to the top
+            // Difficulty Filter and Questions
+            HStack {
+                Text("Filter:")
+                Picker("Difficulty", selection: $viewModel.selectedDifficulty) {
+                    ForEach(viewModel.availableDifficulties, id: \.self) { diff in
+                        Text(diff).tag(diff)
+                    }
+                }
+                .onChange(of: viewModel.selectedDifficulty) { _ in
+                    Task { try? await viewModel.loadQuestions() }
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    Task {
+                        await ProfileManager.shared.manualRefresh()
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .help("Refresh LeetCode stats")
+            }
+            .padding(.top, 8)
+
+            List(viewModel.questions) { q in
+                HStack {
+                    Text(q.title ?? q.titleSlug ?? "Untitled")
+                        .font(.body)
+                    Spacer()
+                    Text(q.difficulty ?? "Unknown")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
         }
         .padding()
     }

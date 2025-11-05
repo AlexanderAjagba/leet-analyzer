@@ -6,3 +6,9 @@
 //
 
 import Foundation
+
+struct DailyQuestionModel {
+    var dailyQuestion: LeetCodeDailyQuestion?
+    var isLoading: Bool = false
+    var errorMessage: String?
+}

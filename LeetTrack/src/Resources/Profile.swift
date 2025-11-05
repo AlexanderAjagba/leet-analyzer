@@ -11,6 +11,126 @@ import MongoSwift
 class ProfileManager : ObservableObject {
     @Published var currentProfile = Profile(username: "")
     static var shared = ProfileManager()
+    
+    private let mongoService: MongoDBService
+    private let profileRepository: ProfileRepository
+    private let leetRepository = LeetCodeRepository()
+    private var updateTimer: Timer?
+    
+    // Rate limiting
+    private var lastAPICall: Date?
+    private let minAPIIntersval: TimeInterval = 60 // Minimum 1 minute between API calls
+    private var consecutiveFailures = 0
+    private let maxFailures = 3
+    
+    init() {
+        do {
+            self.mongoService = try MongoDBService()
+            self.profileRepository = ProfileRepository(mongoService: mongoService)
+            startPeriodicUpdates()
+        } catch {
+            print("Failed to initialize MongoDB service: \(error)")
+            self.mongoService = try! MongoDBService() // Fallback for compilation
+            self.profileRepository = ProfileRepository(mongoService: self.mongoService)
+        }
+    }
+    
+    deinit {
+        updateTimer?.invalidate()
+        mongoService.shutdown()
+    }
+    
+    // Load username from MongoDB or create new profile
+    func loadProfile(userId: String) async {
+        do {
+            if let profile = try await profileRepository.getProfile(username: userId) {
+                await MainActor.run { self.currentProfile = profile }
+            } else {
+                await MainActor.run { self.currentProfile = Profile(username: userId) }
+                await saveProfile()
+            }
+        } catch {
+            print("Failed to load profile: \(error)")
+        }
+    }
+    
+    // Save current profile to MongoDB
+    func saveProfile() async {
+        do {
+            try await profileRepository.saveProfile(currentProfile)
+        } catch {
+            print("Failed to save profile: \(error)")
+        }
+    }
+    
+    // Update username and save to MongoDB
+    func updateUsername(_ newUsername: String) async {
+        await MainActor.run {
+            self.currentProfile.username = newUsername
+        }
+        await saveProfile()
+    }
+    
+    // Start periodic updates every 15 minutes (more conservative)
+    private func startPeriodicUpdates() {
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { [weak self] _ in
+            Task {
+                await self?.refreshLeetCodeStats()
+            }
+        }
+    }
+    
+    // Refresh LeetCode stats with rate limiting and exponential backoff
+    private func refreshLeetCodeStats() async {
+        guard !currentProfile.username.isEmpty else { return }
+        
+        // Check rate limiting
+        if let lastCall = lastAPICall {
+            let timeSinceLastCall = Date().timeIntervalSince(lastCall)
+            if timeSinceLastCall < minAPIIntersval {
+                print("Rate limited: Skipping API call. Last call was \(Int(timeSinceLastCall))s ago")
+                return
+            }
+        }
+        
+        // If we've had too many consecutive failures, back off
+        if consecutiveFailures >= maxFailures {
+            print("Too many consecutive failures (\(consecutiveFailures)). Skipping API call.")
+            return
+        }
+        
+        do {
+            let stats = try await leetRepository.getStats(username: currentProfile.username)
+            await MainActor.run {
+                self.currentProfile.ranking = stats.ranking
+                self.currentProfile.easyQuestions = stats.easySolved
+                self.currentProfile.mediumQuestions = stats.mediumSolved
+                self.currentProfile.hardQuestions = stats.hardSolved
+                self.currentProfile.totalQuestions = stats.totalSolved
+                self.currentProfile.lastUpdated = Date()
+            }
+            await saveProfile()
+            
+            // Reset failure count on success
+            consecutiveFailures = 0
+            lastAPICall = Date()
+            
+        } catch {
+            consecutiveFailures += 1
+            print("Failed to refresh LeetCode stats (attempt \(consecutiveFailures)/\(maxFailures)): \(error)")
+            
+            // If it's a rate limit error, increase the backoff
+            if let urlError = error as? URLError, urlError.code == .tooManyRequests {
+                print("Rate limit hit. Backing off for \(minAPIIntersval * 2) seconds")
+                lastAPICall = Date().addingTimeInterval(-minAPIIntersval * 2)
+            }
+        }
+    }
+    
+    // Manual refresh with rate limiting
+    func manualRefresh() async {
+        await refreshLeetCodeStats()
+    }
 }
 
 public class Profile: Codable, ObservableObject {
@@ -37,37 +157,6 @@ public class Profile: Codable, ObservableObject {
     init(username: String) {
         self.username = username
         self.lastUpdated = Date()
-    }
-    
-    func fetchData() async throws {
-        guard let url = URL(string: "https://alfa-leetcode-api.onrender.com/\(ProfileManager.shared.currentProfile)") else {
-            throw URLError(.badURL)
-        }
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            // Check for valid HTTP response
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
-                throw URLError(.badServerResponse)
-            }
-            
-            // Parse the JSON response
-            let leetcodeData = try JSONDecoder().decode(LeetCodeResponse.self, from: data)
-            
-            // Update profile properties
-            self.ranking = leetcodeData.ranking
-            self.easyQuestions = leetcodeData.easySolved
-            self.mediumQuestions = leetcodeData.mediumSolved
-            self.hardQuestions = leetcodeData.hardSolved
-            self.totalQuestions = leetcodeData.totalSolved
-            self.lastUpdated = Date()
-            
-        } catch {
-            print("Error fetching LeetCode data for \(username): \(error)")
-            throw error
-        }
     }
     
     // Convert Profile to BSON Document for MongoDB storage

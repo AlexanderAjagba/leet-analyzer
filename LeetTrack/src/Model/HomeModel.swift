@@ -1,10 +1,14 @@
 import Foundation
 
 public struct HomeModel {
-    public var profile: Profile?
     public var isLoading: Bool = false
     public var errorMessage: String?
     public var recentProfiles: [Profile] = []
+    
+    // Computed property for current profile
+    public var profile: Profile? {
+        ProfileManager.shared.currentProfile
+    }
     
     // Computed properties for easy access to stats
     public var totalSolved: Int {

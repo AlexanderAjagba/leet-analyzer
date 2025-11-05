@@ -45,7 +45,9 @@ class HomeController: ObservableObject {
                 homeModel.isLoading = false
             }
         }
-    }    // Force refresh current profile data from API
+    }
+    
+    // Force refresh current profile data from API
     
     
     func forceRefreshProfile() {
@@ -56,8 +58,15 @@ class HomeController: ObservableObject {
             homeModel.errorMessage = nil
             
             do {
+                let repository = LeetCodeRepository()
+                let stats = try await repository.getStats(username: currentUsername)
                 var newProfile = Profile(username: currentUsername)
-                try await newProfile.fetchData()
+                newProfile.ranking = stats.ranking
+                newProfile.easyQuestions = stats.easySolved
+                newProfile.mediumQuestions = stats.mediumSolved
+                newProfile.hardQuestions = stats.hardSolved
+                newProfile.totalQuestions = stats.totalSolved
+                newProfile.lastUpdated = Date()
                 try await profileRepository.saveProfile(newProfile)
                 
                 homeModel.profile = newProfile

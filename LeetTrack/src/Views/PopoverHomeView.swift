@@ -1,20 +1,6 @@
 import SwiftUI
 import Charts
 
-// 1. Define the data structure for your chart (assuming this exists)
-//struct ProblemStats: Identifiable {
-//    let category: String
-//    let count: Int
-//    let id = UUID()
-//}
-//
-//// Sample data for the chart to make the preview work
-//let problemData: [ProblemStats] = [
-//    .init(category: "Easy", count: 120),
-//    .init(category: "Medium", count: 180),
-//    .init(category: "Hard", count: 45)
-//]
-
 // Define the tab selections
 enum TabSelection: CaseIterable {
     case home
@@ -46,16 +32,12 @@ enum TabSelection: CaseIterable {
 
 // TabView solution for macOS with profile name
 struct PopoverHomeView: View {
-    private var totalProblems: Int {
-        problemData.reduce(0) { $0 + $1.count }
-    }
-    
+    @StateObject var viewModel = HomeViewModel()
     @State private var selectedTab: TabSelection = .home
     @ObservedObject var profileManager = ProfileManager.shared
+    @ObservedObject private var currentProfile: Profile = ProfileManager.shared.currentProfile
     @State private var isEditingProfile: Bool = false
     @State private var tempProfileName: String = ""
-    // Add this property to observe changes to the username
-    @ObservedObject private var currentProfile: Profile = ProfileManager.shared.currentProfile
     
     var body: some View {
         VStack(spacing: 0) {
@@ -97,7 +79,11 @@ struct PopoverHomeView: View {
                         .font(.title2)
                         .fontWeight(.semibold)
                     
-                    Chart(problemData) { dataPoint in
+                    Chart([
+                        ProblemStats(category: "Easy", count: viewModel.homeModel.easySolved),
+                        ProblemStats(category: "Medium", count: viewModel.homeModel.mediumSolved),
+                        ProblemStats(category: "Hard", count: viewModel.homeModel.hardSolved)
+                    ]) { dataPoint in
                         SectorMark(
                             angle: .value("Count", dataPoint.count),
                             innerRadius: .ratio(0.6),
@@ -106,9 +92,9 @@ struct PopoverHomeView: View {
                         .cornerRadius(5)
                         .foregroundStyle(by: .value("Category", dataPoint.category))
                     }
-                    .chartOverlay { _ in
+                    .overlay {
                         VStack {
-                            Text("\(totalProblems)")
+                            Text("\(viewModel.homeModel.totalSolved)")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
                             Text("Total")
@@ -154,13 +140,21 @@ struct PopoverHomeView: View {
             Button("Save") {
                 let trimmed = tempProfileName.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
-                    currentProfile.username = trimmed
+                    Task {
+                        await ProfileManager.shared.updateUsername(trimmed)
+                    }
                 }
                 tempProfileName = currentProfile.username
             }
         }, message: {
-            Text("Enter your profile name")
+            Text("Enter your LeetCode username")
         })
+        .task {
+            // Load profile from MongoDB first
+            await ProfileManager.shared.loadProfile(userId: "default_user")
+            // Then load LeetCode stats
+            await viewModel.load(username: currentProfile.username, userId: currentProfile.username)
+        }
     }
 }
 // Function where you can handle the profile name change
