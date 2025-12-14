@@ -1,0 +1,19 @@
+{
+  "name": "leettrack-backend",
+  "version": "1.0.0",
+  "description": "Backend for LeetTrack (Express + MongoDB + caching)",
+  "license": "ISC",
+  "type": "commonjs",
+  "main": "database/server.js",
+  "scripts": {
+    "start": "node database/server.js",
+    "dev": "node database/server.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
+    "mongodb": "^7.0.0"
+  }
+}

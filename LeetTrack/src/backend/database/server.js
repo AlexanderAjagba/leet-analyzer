@@ -1,42 +1,48 @@
-    require('dotenv').config();
-    const { MongoClient, ServerApiVersion } = require('mongodb');
-    const uri = process.env.DATABASE_URL;
+// database/server.js
+require("dotenv").config();
 
+const express = require("express");
+const { MongoClient, ServerApiVersion } = require("mongodb");
 
-    
+const userRoutes = require("../routes/user");
+const problemRoutes = require("../routes/problems");
+const { rate } = require("../middleware/ratelimiter");
 
-    // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-    const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,   
-        deprecationErrors: true,
-    }
-    });
+const uri = process.env.DATABASE_URL;
+if (!uri) {
+  throw new Error("DATABASE_URL is missing.");
+}
 
-    class Database {
-        
-    }
+const app = express();
 
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
 
+async function startServer() {
+  await client.connect();
+  globalThis.dbClient = client;
+  console.log("Connected to MongoDB!");
 
-    module.exports = { Database };
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
 
-    /* 
-    this is for testing the connection to the database
+// Global middleware
+app.use(express.json());
+app.use(rate);
 
+// Routes
+app.use("/user", userRoutes);
+app.use("/problems", problemRoutes);
 
-    async function run() {
-    try {
-        // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
-        // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    } finally {
-        // Ensures that the client will close when you finish/error
-        await client.close();
-    }
-    }
-    run().catch(console.dir);
-    */ 
+startServer().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
