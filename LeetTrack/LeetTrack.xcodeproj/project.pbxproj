@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		579F81582E43F07200BC891B /* MongoDBService in Sources */ = {isa = PBXBuildFile; fileRef = 579F81572E43F03B00BC891B /* MongoDBService */; };
 		579F815B2E43F35D00BC891B /* MongoDBService in Frameworks */ = {isa = PBXBuildFile; productRef = 579F815A2E43F35D00BC891B /* MongoDBService */; };
-		57AEAC5A2E9CB9CA002D95F3 /* docker-compose.yml in Resources */ = {isa = PBXBuildFile; fileRef = 57AEAC592E9CB9C0002D95F3 /* docker-compose.yml */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,8 +31,6 @@
 		577AC2D92DC9523200026338 /* LeetTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeetTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		577AC2E72DC9523700026338 /* LeetTrackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeetTrackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		577AC2F12DC9523700026338 /* LeetTrackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeetTrackUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		579F81572E43F03B00BC891B /* MongoDBService */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MongoDBService; sourceTree = SOURCE_ROOT; };
-		57AEAC592E9CB9C0002D95F3 /* docker-compose.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "docker-compose.yml"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -84,12 +80,10 @@
 		577AC2D02DC9523200026338 = {
 			isa = PBXGroup;
 			children = (
-				57AEAC592E9CB9C0002D95F3 /* docker-compose.yml */,
 				577AC2DB2DC9523200026338 /* src */,
 				577AC2EA2DC9523700026338 /* LeetTrackTests */,
 				577AC2F42DC9523700026338 /* LeetTrackUITests */,
 				577AC2DA2DC9523200026338 /* Products */,
-				579F81572E43F03B00BC891B /* MongoDBService */,
 			);
 			sourceTree = "<group>";
 		};
@@ -227,7 +221,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				57AEAC5A2E9CB9CA002D95F3 /* docker-compose.yml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,7 +245,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				579F81582E43F07200BC891B /* MongoDBService in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
