@@ -1,14 +1,14 @@
-//
-//  DailyQuestionModel.swift
-//  LeetTrack
-//
-//  Created by Alexander Ajagba on 8/7/25.
-//
-
 import Foundation
 
+struct DailyQuestion: Codable, Equatable {
+    let link: String
+    let title: String
+    let difficulty: String
+    let date: String
+}
+
 struct DailyQuestionModel {
-    var dailyQuestion: LeetCodeDailyQuestion?
+    var dailyQuestion: DailyQuestion?
     var isLoading: Bool = false
     var errorMessage: String?
 }

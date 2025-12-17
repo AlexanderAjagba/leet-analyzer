@@ -3,80 +3,58 @@ import Foundation
 public struct HomeModel {
     public var isLoading: Bool = false
     public var errorMessage: String?
-    public var recentProfiles: [Profile] = []
-    
-    // Computed property for current profile
-    public var profile: Profile? {
-        ProfileManager.shared.currentProfile
-    }
-    
-    // Computed properties for easy access to stats
-    public var totalSolved: Int {
-        return profile?.totalQuestions ?? 0
-    }
-    
-    public var easySolved: Int {
-        return profile?.easyQuestions ?? 0
-    }
-    
-    public var mediumSolved: Int {
-        return profile?.mediumQuestions ?? 0
-    }
-    
-    public var hardSolved: Int {
-        return profile?.hardQuestions ?? 0
-    }
-    
-    public var userRanking: Int? {
-        return profile?.ranking
-    }
-    
+
+    public var recentUsers: [User] = []
+    public var activeUser: User? = nil
+
+    // /user/:id/stats
+    public var stats: UserStats? = nil
+
+    // /user/:id/easy|medium|hard
+    public var easy: EasyResponse? = nil
+    public var medium: MediumResponse? = nil
+    public var hard: HardResponse? = nil
+
+    public var lastUpdated: Date? = nil
+
+    // MARK: - Computed helpers
+
     public var username: String {
-        return profile?.username ?? "Unknown"
+        activeUser?.username ?? "Unknown"
     }
-    
-    public var lastUpdated: Date? {
-        return profile?.lastUpdated
+
+    public var totalSolved: Int {
+        stats?.totalSolved ?? 0
     }
-    
+
+    public var easySolved: Int {
+        easy?.easySolved ?? 0
+    }
+
+    public var mediumSolved: Int {
+        medium?.mediumSolved ?? 0
+    }
+
+    public var hardSolved: Int {
+        hard?.hardSolved ?? 0
+    }
+
+    public var userRanking: Int? {
+        stats?.ranking
+    }
+
     public var dataAge: String {
-        guard let lastUpdated = lastUpdated else { return "Never" }
-        
-        let timeInterval = Date().timeIntervalSince(lastUpdated)
-        
-        if timeInterval < 60 {
-            return "Just now"
-        } else if timeInterval < 3600 {
-            let minutes = Int(timeInterval / 60)
-            return "\(minutes)m ago"
-        } else if timeInterval < 86400 {
-            let hours = Int(timeInterval / 3600)
-            return "\(hours)h ago"
-        } else {
-            let days = Int(timeInterval / 86400)
-            return "\(days)d ago"
-        }
+        guard let lastUpdated else { return "Never" }
+        let dt = Date().timeIntervalSince(lastUpdated)
+
+        if dt < 60 { return "Just now" }
+        if dt < 3600 { return "\(Int(dt / 60))m ago" }
+        if dt < 86400 { return "\(Int(dt / 3600))h ago" }
+        return "\(Int(dt / 86400))d ago"
     }
-    
-    // Helper method to get progress percentage for each difficulty
-    public func getProgressPercentage(for difficulty: String) -> Double {
-        guard let profile = profile else { return 0.0 }
-        
-        switch difficulty.lowercased() {
-        case "easy":
-            return profile.easyQuestions != nil ? Double(profile.easyQuestions!) / 100.0 : 0.0
-        case "medium":
-            return profile.mediumQuestions != nil ? Double(profile.mediumQuestions!) / 100.0 : 0.0
-        case "hard":
-            return profile.hardQuestions != nil ? Double(profile.hardQuestions!) / 100.0 : 0.0
-        default:
-            return 0.0
-        }
-    }
-    
-    // Get statistics summary for display
+
     public var statsSummary: [(String, Int, String)] {
-        return [
+        [
             ("Total", totalSolved, "blue"),
             ("Easy", easySolved, "green"),
             ("Medium", mediumSolved, "orange"),

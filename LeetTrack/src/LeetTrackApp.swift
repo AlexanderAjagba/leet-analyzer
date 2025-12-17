@@ -1,15 +1,15 @@
 import SwiftUI
+
 @main
 struct LeetTrackApp: App {
-  // keep one instance of your view-model
-//  @StateObject private var dbViewModel = DatabaseViewModel()
+    @StateObject private var session = SessionStore()
 
-  var body: some Scene {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    WindowGroup  {
-      HomeView()
-//        .environmentObject(dbViewModel)
+    var body: some Scene {
+        @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+        WindowGroup {
+            HomeView(sessionStore: session)
+                .environmentObject(session)
+        }
     }
-  }
 }
-

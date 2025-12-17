@@ -1,143 +1,97 @@
-//
-//  HomeController.swift
-//  LeetTrack
-//
-//  Created by Alexander Ajagba on 8/7/25.
-//
-
 import Foundation
 import SwiftUI
-import MongoDBService
 
 @MainActor
-class HomeController: ObservableObject {
+final class HomeController: ObservableObject {
     @Published var homeModel = HomeModel()
-    
-    private let mongoService: MongoDBService
-    private let profileRepository: ProfileRepository
-    
-    init() {
-        do {
-            self.mongoService = try MongoDBService()
-            self.profileRepository = ProfileRepository(mongoService: mongoService)
-        } catch {
-            fatalError("Failed to initialize MongoDB service: \(error)")
-        }
-        
-        // Load recent activity on initialization
-        Task {
-            await loadRecentActivity()
-        }
+
+    private let userRepository: UserRepository
+    private let sessionStore: SessionStore
+
+    init(
+        sessionStore: SessionStore,
+        userRepository: UserRepository = UserRepository(http: HTTPClient())
+    ) {
+        self.sessionStore = sessionStore
+        self.userRepository = userRepository
+
+        // Mirror session's active user into homeModel (optional but convenient)
+        homeModel.activeUser = sessionStore.activeUser
     }
-    
-    // Load profile data from MongoDB (with API fallback if needed)
+
+    /// Load user data from your backend (which handles Mongo cache + refresh).
     func loadUserProfile(username: String) {
         Task {
             homeModel.isLoading = true
             homeModel.errorMessage = nil
-            
+            defer { homeModel.isLoading = false }
+
             do {
-                let loadedProfile = try await profileRepository.getProfileWithRefresh(username: username)
-                homeModel.profile = loadedProfile
-                homeModel.isLoading = false
+                // Set active user globally
+                let user = User(username: username)
+                sessionStore.activeUser = user
+                homeModel.activeUser = user
+
+                // Fetch concurrently
+                async let statsTask = userRepository.fetchStats(username: username)
+                async let easyTask = userRepository.fetchEasy(username: username)
+                async let mediumTask = userRepository.fetchMedium(username: username)
+                async let hardTask = userRepository.fetchHard(username: username)
+
+                homeModel.stats = try await statsTask
+                homeModel.easy = try await easyTask
+                homeModel.medium = try await mediumTask
+                homeModel.hard = try await hardTask
+
+                homeModel.lastUpdated = Date()
+
+                // Update recent users (dedupe + most recent first)
+                homeModel.recentUsers.removeAll(where: { $0.username == username })
+                homeModel.recentUsers.insert(user, at: 0)
+
             } catch {
-                homeModel.errorMessage = "Failed to load profile: \(error.localizedDescription)"
-                homeModel.isLoading = false
+                homeModel.errorMessage = "Failed to load user: \(error.localizedDescription)"
             }
         }
     }
-    
-    // Force refresh current profile data from API
-    
-    
+
     func forceRefreshProfile() {
-        guard let currentUsername = homeModel.profile?.username else { return }
-        
-        Task {
-            homeModel.isLoading = true
-            homeModel.errorMessage = nil
-            
-            do {
-                let repository = LeetCodeRepository()
-                let stats = try await repository.getStats(username: currentUsername)
-                var newProfile = Profile(username: currentUsername)
-                newProfile.ranking = stats.ranking
-                newProfile.easyQuestions = stats.easySolved
-                newProfile.mediumQuestions = stats.mediumSolved
-                newProfile.hardQuestions = stats.hardSolved
-                newProfile.totalQuestions = stats.totalSolved
-                newProfile.lastUpdated = Date()
-                try await profileRepository.saveProfile(newProfile)
-                
-                homeModel.profile = newProfile
-                homeModel.isLoading = false
-            } catch {
-                homeModel.errorMessage = "Failed to refresh profile: \(error.localizedDescription)"
-                homeModel.isLoading = false
-            }
-        }
+        guard let username = sessionStore.activeUser?.username else { return }
+        loadUserProfile(username: username)
     }
-    
-    // Load recent activity from MongoDB
-    private func loadRecentActivity() async {
-        do {
-            let recent = try await profileRepository.getRecentActivity()
-            homeModel.recentProfiles = recent
-        } catch {
-            print("Failed to load recent activity: \(error)")
-        }
+
+    func loadRecentUser(_ user: User) {
+        loadUserProfile(username: user.username)
     }
-    
-    // Load a profile from recent activity
-    func loadRecentProfile(_ profile: Profile) {
-        homeModel.profile = profile
-    }
-    
-    // Clear current profile
+
     func clearProfile() {
-        homeModel.profile = nil
+        sessionStore.activeUser = nil
+        homeModel.activeUser = nil
+
+        homeModel.stats = nil
+        homeModel.easy = nil
+        homeModel.medium = nil
+        homeModel.hard = nil
+
+        homeModel.lastUpdated = nil
         homeModel.errorMessage = nil
     }
-    
-    // Delete a profile from MongoDB
-    func deleteProfile(username: String) {
-        Task {
-            do {
-                try await profileRepository.deleteProfile(username: username)
-                // Refresh recent activity
-                await loadRecentActivity()
-                
-                // Clear current profile if it was the deleted one
-                if homeModel.username == username {
-                    clearProfile()
-                }
-            } catch {
-                homeModel.errorMessage = "Failed to delete profile: \(error.localizedDescription)"
-            }
+
+    func deleteUser(username: String) {
+        // Local-only delete (since backend stores user data for caching purposes).
+        homeModel.recentUsers.removeAll(where: { $0.username == username })
+
+        if sessionStore.activeUser?.username == username {
+            clearProfile()
         }
     }
-    
-    // Get all stored profiles
-    func getAllProfiles() async -> [Profile] {
-        do {
-            return try await profileRepository.getAllProfiles()
-        } catch {
-            print("Failed to get all profiles: \(error)")
-            return []
-        }
-    }
-    
-    // Check if we have valid profile data
+
     var hasValidProfile: Bool {
-        homeModel.profile != nil && homeModel.errorMessage == nil
+        homeModel.activeUser != nil && homeModel.errorMessage == nil
     }
-    
-    // Check if current profile needs refresh
+
     var profileNeedsRefresh: Bool {
-        homeModel.profile?.needsRefresh ?? false
-    }
-    
-    deinit {
-        mongoService.shutdown()
+        guard let last = homeModel.lastUpdated else { return true }
+        return Date().timeIntervalSince(last) > 3600
     }
 }

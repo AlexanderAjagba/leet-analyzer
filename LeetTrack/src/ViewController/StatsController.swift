@@ -1,60 +1,46 @@
-//
-//  StatsController.swift
-//  LeetTrack
-//
-//  Created by Alexander Ajagba on 8/7/25.
-//
-
 import Foundation
-import MongoDBService
 
-class StatsController: ObservableObject {
+@MainActor
+final class StatsController: ObservableObject {
     @Published var model = StatsModel()
-    
-    private let problemRepository: ProblemRepository
-    
-    init() {
-        do {
-            let mongoService = try MongoDBService()
-            self.problemRepository = ProblemRepository(mongoService: mongoService)
-        } catch {
-            fatalError("Failed to initialize MongoDB service: \(error)")
-        }
+
+    private let userRepository: UserRepository
+    private let sessionStore: SessionStore
+
+    init(
+        sessionStore: SessionStore,
+        userRepository: UserRepository = UserRepository(http: HTTPClient())
+    ) {
+        self.sessionStore = sessionStore
+        self.userRepository = userRepository
     }
-    
-    @MainActor
-    func loadRecentProblems() async {
+
+    func loadRecentSubmissions(username: String? = nil) async {
+        let targetUsername = username ?? sessionStore.activeUser?.username
+
+        guard let targetUsername, !targetUsername.isEmpty else {
+            model.isLoading = false
+            model.errorMessage = "Set a username to see recent submissions."
+            model.recentSubmissions = []
+            model.lastUpdated = nil
+            return
+        }
+
         model.isLoading = true
         model.errorMessage = nil
         defer { model.isLoading = false }
-        
+
         do {
-            // MongoDB-first approach: check Atlas first, fallback to API if needed
-            let recentProblems = try await problemRepository.getRecentProblems()
-            model.recentProblems = recentProblems
+            let resp = try await userRepository.fetchRecentSubmissions(username: targetUsername)
+            model.recentSubmissions = resp.submissions
             model.lastUpdated = Date()
         } catch {
-            model.errorMessage = "Failed to load recent problems: \(error.localizedDescription)"
-            model.recentProblems = []
+            model.errorMessage = "Failed to load recent submissions."
+            // keep existing submissions so UI doesn't flash empty
         }
     }
-    
-    // Force refresh from API (bypasses MongoDB cache)
-    @MainActor
-    func forceRefreshProblems() async {
-        model.isLoading = true
-        model.errorMessage = nil
-        defer { model.isLoading = false }
-        
-        do {
-            // Force fetch from API and save to MongoDB
-            let repository = LeetCodeRepository()
-            let freshProblems = try await repository.getProblems(difficulty: nil)
-            try await problemRepository.saveProblems(freshProblems)
-            model.recentProblems = Array(freshProblems.prefix(10))
-            model.lastUpdated = Date()
-        } catch {
-            model.errorMessage = "Failed to refresh problems: \(error.localizedDescription)"
-        }
+
+    func forceRefresh(username: String? = nil) async {
+        await loadRecentSubmissions(username: username)
     }
 }

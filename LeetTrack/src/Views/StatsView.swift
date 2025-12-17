@@ -1,124 +1,72 @@
-//
-//  StatsView.swift
-//  LeetTrack
-//
-//  Created by Alexander Ajagba on 8/7/25.
-//
-
 import SwiftUI
 
-struct StatsView: View {
-    @StateObject private var controller = StatsController()
-    
-    var body: some View {
+public struct StatsView: View {
+    @StateObject private var controller: StatsController
+
+    init(sessionStore: SessionStore) {
+        _controller = StateObject(wrappedValue: StatsController(sessionStore: sessionStore))
+    }
+
+    public var body: some View {
         VStack(spacing: 20) {
-            HStack {
-                Text("Recent Problems")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Button(action: {
-                    Task {
-                        await controller.forceRefreshProblems()
-                    }
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 16))
-                        .foregroundColor(.blue)
-                }
-                .buttonStyle(.plain)
-                .disabled(controller.model.isLoading)
-            }
-            
+            header
+
             if let lastUpdated = controller.model.lastUpdated {
                 Text("Last updated: \(lastUpdated, style: .relative) ago")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
-            if controller.model.isLoading {
-                ProgressView("Loading...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if controller.model.recentProblems.isEmpty {
-                Text(controller.model.errorMessage ?? "No problems available")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(controller.model.recentProblems) { problem in
-                            ProblemRowView(problem: problem)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            
+
+            content
+
             Spacer()
         }
         .padding()
         .task {
-            await controller.loadRecentProblems()
+            await controller.loadRecentSubmissions()
         }
     }
-}
 
-struct ProblemRowView: View {
-    let problem: LeetCodeProblem
-    
-    var difficultyColor: Color {
-        switch problem.difficulty?.uppercased() {
-        case "EASY":
-            return .green
-        case "MEDIUM":
-            return .orange
-        case "HARD":
-            return .red
-        default:
-            return .secondary
-        }
-    }
-    
-    var body: some View {
+    private var header: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                if let title = problem.title {
-                    Text(title)
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .lineLimit(2)
-                }
-                
-                if let difficulty = problem.difficulty {
-                    Text(difficulty.uppercased())
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(difficultyColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(difficultyColor.opacity(0.1))
-                        .cornerRadius(4)
-                }
-            }
-            
+            Text("Recent Submissions")
+                .font(.title2)
+                .fontWeight(.semibold)
+
             Spacer()
-            
-            if let paidOnly = problem.paidOnly, paidOnly {
-                Image(systemName: "crown.fill")
-                    .foregroundColor(.yellow)
-                    .font(.caption)
+
+            Button {
+                Task { await controller.forceRefresh() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 16))
+            }
+            .buttonStyle(.plain)
+            .disabled(controller.model.isLoading)
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if controller.model.isLoading {
+            ProgressView("Loading...")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        } else if controller.model.recentSubmissions.isEmpty {
+            Text(controller.model.errorMessage ?? "No submissions available")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(controller.model.recentSubmissions) { sub in
+                        SubmissionRowView(submission: sub)
+                    }
+                }
+                .padding(.horizontal)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(8)
     }
-}
-
-#Preview {
-    StatsView()
 }
